@@ -473,6 +473,13 @@ static bool ArchHasJMPCALL(StringRef Arch) {
       .Default(false);
 }
 
+static bool ArchHasADDSUBIW(StringRef Arch) {
+  return llvm::StringSwitch<bool>(Arch)
+      .Cases({"2", "25", "3", "31", "35", "4", "5", "51", "6"}, true)
+      .Cases({"102", "103", "104", "105", "106", "107"}, true)
+      .Default(false);
+}
+
 static bool ArchHas3BytePC(StringRef Arch) {
   // These devices have more than 128kB of program memory.
   // Note:
@@ -484,6 +491,32 @@ static bool ArchHas3BytePC(StringRef Arch) {
     .Case("6", true)
     .Case("106", true)
     .Default(false);
+}
+
+bool AVRTargetInfo::hasFeature(StringRef Feature) const {
+  return llvm::StringSwitch<bool>(Feature)
+      .Case("elpm", ArchHasELPM(Arch))
+      .Case("elpmx", ArchHasELPMX(Arch))
+      .Case("movw", ArchHasMOVW(Arch))
+      .Case("lpmx", ArchHasLPMX(Arch))
+      .Case("mul", ArchHasMUL(Arch))
+      .Case("jmpcall", ArchHasJMPCALL(Arch))
+      .Case("3bytepc", ArchHas3BytePC(Arch))
+      .Case("addsubiw", ArchHasADDSUBIW(Arch))
+      .Default(false);
+}
+
+bool AVRTargetInfo::isValidFeatureName(StringRef Feature) const {
+  return llvm::StringSwitch<bool>(Feature)
+      .Case("elpm", true)
+      .Case("elpmx", true)
+      .Case("movw", true)
+      .Case("lpmx", true)
+      .Case("mul", true)
+      .Case("jmpcall", true)
+      .Case("3bytepc", true)
+      .Case("addsubiw", true)
+      .Default(false);
 }
 
 bool AVRTargetInfo::isValidCPUName(StringRef Name) const {
@@ -562,6 +595,8 @@ void AVRTargetInfo::getTargetDefines(const LangOptions &Opts,
     Builder.defineMacro("__AVR_HAVE_MUL__");
   if (ArchHasJMPCALL(Arch))
     Builder.defineMacro("__AVR_HAVE_JMP_CALL__");
+  if (ArchHasADDSUBIW(Arch))
+    Builder.defineMacro("__AVR_HAVE_ADIW__");
   if (ArchHas3BytePC(Arch)) {
     // Note: some devices do support eijmp/eicall even though this macro isn't
     // set. This is the case if they have less than 128kB flash and so

@@ -174,6 +174,8 @@ public:
   bool isValidCPUName(StringRef Name) const override;
   void fillValidCPUList(SmallVectorImpl<StringRef> &Values) const override;
   bool setCPU(const std::string &Name) override;
+  bool hasFeature(StringRef Feature) const override;
+  bool isValidFeatureName(StringRef Feature) const override;
   std::optional<std::string> handleAsmEscapedChar(char EscChar) const override;
   StringRef getABI() const override { return ABI; }
 

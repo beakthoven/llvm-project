@@ -8,5 +8,6 @@
 // CHECK: #define __AVR_HAVE_LPMX__ 1
 // CHECK: #define __AVR_HAVE_MOVW__ 1
 // CHECK: #define __AVR_HAVE_MUL__ 1
+// CHECK: #define __AVR_HAVE_ADIW__ 1
 // CHECK: #define __AVR__ 1
 // CHECK: #define __ELF__ 1
