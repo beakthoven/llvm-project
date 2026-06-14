@@ -32,6 +32,23 @@ static Value *EmitAVRFMulInlineAsm(CodeGenFunction &CGF, const CallExpr *E,
   llvm::FunctionType *FTy =
       llvm::FunctionType::get(ResTy, {ArgTy, ArgTy}, false);
 
+  // Fallback to libcall if the target does not support the hardware multiplier.
+  // The libgcc implementation of __fmul/__fmuls/__fmulsu does NOT use the
+  // standard C ABI. It expects arguments in r24 and r25, and returns the
+  // result in r22:r23. We must emit inline asm to bind these registers.
+  if (!CGF.getTarget().hasFeature("mul") || !CGF.getTarget().hasFeature("movw")) {
+    std::string FuncName = std::string("__") + AsmInsn;
+    // ${0:A} and ${0:B} select the lo/hi bytes of the i16 output register
+    // pair; handled by AVRAsmPrinter::PrintAsmOperand (A=byte 0, B=byte 1).
+    std::string Asm = "mov r25, $2\n\trcall " + FuncName +
+                      "\n\tmov ${0:A}, r22\n\tmov ${0:B}, r23";
+    // Clobbers: r0 (__tmp_reg__), r22:r23 (return value read then clobbered),
+    // r24 (input but destroyed by callee), r25 (set by mov above).
+    llvm::InlineAsm *IA = llvm::InlineAsm::get(
+        FTy, Asm, "=&r,{r24},r,~{r0},~{r22},~{r23},~{r24},~{r25}", true);
+    return CGF.Builder.CreateCall(IA, {Arg0, Arg1});
+  }
+
   // Build the asm string: "<insn> $1, $2\n\tmovw $0, r0\n\tclr r1"
   std::string Asm = std::string(AsmInsn) + " $1, $2\n\tmovw $0, r0\n\tclr r1";
   llvm::InlineAsm *IA =
