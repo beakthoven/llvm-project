@@ -457,6 +457,13 @@ static bool ArchHasJMPCALL(StringRef Arch) {
       .Default(false);
 }
 
+static bool ArchHasADDSUBIW(StringRef Arch) {
+  return llvm::StringSwitch<bool>(Arch)
+      .Cases({"2", "25", "3", "31", "35", "4", "5", "51", "6"}, true)
+      .Cases({"102", "103", "104", "105", "106", "107"}, true)
+      .Default(false);
+}
+
 static bool ArchHas3BytePC(StringRef Arch) {
   // These devices have more than 128kB of program memory.
   // Note:
@@ -541,6 +548,8 @@ void AVRTargetInfo::getTargetDefines(const LangOptions &Opts,
     Builder.defineMacro("__AVR_HAVE_MUL__");
   if (ArchHasJMPCALL(Arch))
     Builder.defineMacro("__AVR_HAVE_JMP_CALL__");
+  if (ArchHasADDSUBIW(Arch))
+    Builder.defineMacro("__AVR_HAVE_ADIW__");
   if (ArchHas3BytePC(Arch)) {
     // Note: some devices do support eijmp/eicall even though this macro isn't
     // set. This is the case if they have less than 128kB flash and so
